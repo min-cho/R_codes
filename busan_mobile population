@@ -1,3 +1,31 @@
+## Comparision with census
+
+d1<-as.matrix(file[1:200,3])
+d2<-as.matrix(file[1:200,4])
+d3<-as.matrix(file[1:200,5])
+d4<-as.matrix(file[1:200,6])
+d5<-as.matrix(file[1:200,7])
+
+d1 <- matrix(d1, nrow = 10, byrow = TRUE)
+d2 <- matrix(d2, nrow = 10, byrow = TRUE)
+d3 <- matrix(d3, nrow = 10, byrow = TRUE)
+d4 <- matrix(d4, nrow = 10, byrow = TRUE)
+d5 <- matrix(d5, nrow = 10, byrow = TRUE)
+
+heatmap(d1)
+heatmap(d2)
+heatmap(d3)
+heatmap(d4)
+heatmap(d5)
+
+library(plotly)
+plot_ly(z = d1, colorscale = "Greys", type = "heatmap")
+plot_ly(z = d2, colorscale = "Greys", type = "heatmap")
+plot_ly(z = d3, colorscale = "Greys", type = "heatmap")
+plot_ly(z = d4, colorscale = "Greys", type = "heatmap")
+plot_ly(z = d5, colorscale = "Greys", type = "heatmap")
+
+
 
 ##t-SNE
 
