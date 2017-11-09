@@ -1,0 +1,36 @@
+
+##t-SNE
+
+Rtsne_res <- Rtsne(data_train[,2:25], check_duplicates = FALSE, pca = FALSE, perplexity=20, theta=0.5, dims=2)
+
+plot(Rtsne_res$Y, t='n')
+cols <- rainbow(16)
+text(Rtsne_res$Y, labels=rownames(data_train), col=cols[data_train[,1]])
+
+
+Rtsne_res_3d <- Rtsne(data_train[,2:25], check_duplicates = FALSE, pca = FALSE, perplexity=20, theta=0.5, dims=3)
+
+#display results of t-SNE
+require(rgl)
+plot3d(Rtsne_res_3d$Y, col=cols[data_train[,1]])
+# text3d(Rtsne_res_3d$Y, text=rownames(data_train))
+
+
+###### SOM
+
+som_grid <- somgrid(xdim = 10, ydim=10, topo="hexagonal")
+
+som_model <- som(data_train[,2:25], 
+                 grid=som_grid, 
+                 rlen=100, 
+                 alpha=c(0.05,0.01), 
+                 keep.data = TRUE,
+                 normalizeDataLayers = TRUE)
+
+plot(som_model, type="changes")
+plot(som_model, type="count", label=label)
+plot(som_model, type="dist.neighbours") #U-MATRIX                                     
+plot(som_model, type="codes") #same as default type
+
+label <- rownames(data_train)
+plot(som_model, type="mapping", label=label)
