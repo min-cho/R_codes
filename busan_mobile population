@@ -27,21 +27,45 @@ plot_ly(z = d5, colorscale = "Greys", type = "heatmap")
 
 
 
-##t-SNE
+##t-SNE 207 dongs from SGIS BUSAN
 
-Rtsne_res <- Rtsne(data_train[,2:25], check_duplicates = FALSE, pca = FALSE, perplexity=20, theta=0.5, dims=2)
+library(tsne)
+library(Rtsne)
+library(kohonen)
+
+set.seed(777) 
+
+file<-read.csv("busan_201702_sgis.csv",header=T)
+
+popdata<-file[,4:27]
+
+dong=207
+dongnames<-unique(file[,1])
+days=28
+
+data<-data.frame((matrix(nrow=dong,ncol=days*24)))
+rownames(data)<-dongnames
+
+for(j in 0:(dong-1)){
+  for(i in 1:(days)){
+    first<-(24*(i-1))+1
+    last<-24*i
+    data[j+1,first:last]<-slice(popdata,(28*j)+i)
+}}
+
+data<-data[-c(327:331)]  ##omitted data points
+
+Rtsne_res <- Rtsne(data[,1:667], check_duplicates = FALSE, pca = TRUE, perplexity=5, theta=0.5, dims=2)
 
 plot(Rtsne_res$Y, t='n')
-cols <- rainbow(16)
-text(Rtsne_res$Y, labels=rownames(data_train), col=cols[data_train[,1]])
+#cols <- rainbow(16)
+text(Rtsne_res$Y, labels=rownames(data))
 
 
-Rtsne_res_3d <- Rtsne(data_train[,2:25], check_duplicates = FALSE, pca = FALSE, perplexity=20, theta=0.5, dims=3)
-
-#display results of t-SNE
-require(rgl)
-plot3d(Rtsne_res_3d$Y, col=cols[data_train[,1]])
-# text3d(Rtsne_res_3d$Y, text=rownames(data_train))
+#PCA
+pca_result <- prcomp(data[,1:667],tol=0.01)
+summary(pca_result)
+print(pca_result)
 
 
 ###### SOM
