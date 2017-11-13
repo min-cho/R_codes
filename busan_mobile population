@@ -29,9 +29,7 @@ plot_ly(z = d5, colorscale = "Greys", type = "heatmap")
 
 ##t-SNE 207 dongs from SGIS BUSAN
 
-library(tsne)
-library(Rtsne)
-library(kohonen)
+library(dplyr)
 
 set.seed(777) 
 
@@ -40,11 +38,10 @@ file<-read.csv("busan_201702_sgis.csv",header=T)
 popdata<-file[,4:27]
 
 dong=207
-dongnames<-unique(file[,1])
+
 days=28
 
 data<-data.frame((matrix(nrow=dong,ncol=days*24)))
-rownames(data)<-dongnames
 
 for(j in 0:(dong-1)){
   for(i in 1:(days)){
@@ -53,19 +50,49 @@ for(j in 0:(dong-1)){
     data[j+1,first:last]<-slice(popdata,(28*j)+i)
 }}
 
-data<-data[-c(327:331)]  ##omitted data points
 
-Rtsne_res <- Rtsne(data[,1:667], check_duplicates = FALSE, pca = TRUE, perplexity=5, theta=0.5, dims=2)
+data<-data[,-c(327:331)]  ##omitted data points
 
-plot(Rtsne_res$Y, t='n')
-#cols <- rainbow(16)
+dongnames<-unique(file[,1])
+GU<-read.csv("dong_gu.csv",header=T) 
+
+data<-cbind(dongnames,data)
+data<-inner_join(data,GU,by="dongnames")
+data<-cbind(data$GUnames,data)
+data<-data[,-c(2,ncol(data))]
+rownames(data)<-dongnames
+
+### t-SNE
+
+#library(tsne)
+library(Rtsne)
+
+Rtsne_res <- Rtsne(data[,2:668], check_duplicates = FALSE, pca = TRUE, perplexity=5, theta=0.5, dims=2)
+
+Rtsne_res <- Rtsne(data[,2:668], check_duplicates = FALSE, pca = FALSE, perplexity=5, theta=0.5, dims=2)
+
+cols <- rainbow(length(unique(data[,1]))) #by 행정구
+plot(Rtsne_res$Y, t='p',col=cols[data[,1]], cex=.5, lwd=2)
+text(Rtsne_res$Y, labels=rownames(data), cex=0.5)
+
+
+require(rgl)
+Rtsne_res_3d <- Rtsne(data[,2:668], check_duplicates = FALSE, pca = TRUE, perplexity=5, theta=0.5, dims=3)
+plot3d(Rtsne_res_3d$Y, col=cols[data[,1]])
 text(Rtsne_res$Y, labels=rownames(data))
 
 
-#PCA
-pca_result <- prcomp(data[,1:667],tol=0.01)
+
+### PCA
+
+pca_result <- prcomp(data[,2:668],tol=0.01)
 summary(pca_result)
 print(pca_result)
+plot(pca_result, type = "l")
+
+#from https://cran.r-project.org/web/packages/ggfortify/vignettes/plot_pca.html
+require(ggfortify)
+autoplot(pca_result, label=TRUE, label.size=2, shape = TRUE, loadings=FALSE, col=cols[data[,1]])
 
 
 ###### SOM
