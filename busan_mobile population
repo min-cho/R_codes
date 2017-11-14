@@ -29,6 +29,8 @@ plot_ly(z = d5, colorscale = "Greys", type = "heatmap")
 
 ##t-SNE 207 dongs from SGIS BUSAN
 
+rm(list=ls())
+setwd("C:/Users/cho/Desktop/Rcode") ##저장위치 지정##
 library(dplyr)
 
 set.seed(777) 
@@ -62,26 +64,34 @@ data<-cbind(data$GUnames,data)
 data<-data[,-c(2,ncol(data))]
 rownames(data)<-dongnames
 
-### t-SNE
+write.csv(data,"busan_1702_processed.csv")
+
+####################################################################
+###t-SNE
+
+setwd("C:/Users/cho/Desktop/Rcode") ##저장위치 지정##
+set.seed(777) 
+
+data<-read.csv("busan_1702_processed.csv",header=T, row.names=1)
 
 #library(tsne)
 library(Rtsne)
 
-Rtsne_res <- Rtsne(data[,2:668], check_duplicates = FALSE, pca = TRUE, perplexity=5, theta=0.5, dims=2)
+#Rtsne_res <- Rtsne(data[,2:668], check_duplicates = FALSE, pca = TRUE, perplexity=5, theta=0, dims=2, max_iter=10000)
 
-Rtsne_res <- Rtsne(data[,2:668], check_duplicates = FALSE, pca = FALSE, perplexity=5, theta=0.5, dims=2)
+Rtsne_res <- Rtsne(data[,2:668], check_duplicates = FALSE, pca = FALSE, perplexity=5, theta=0, dims=2, max_iter=1000)
 
 cols <- rainbow(length(unique(data[,1]))) #by 행정구
 plot(Rtsne_res$Y, t='p',col=cols[data[,1]], cex=.5, lwd=2)
 text(Rtsne_res$Y, labels=rownames(data), cex=0.5)
 
+addinfo<-read.csv("busan_addinfo.csv",header=T)
+text(Rtsne_res$Y, labels=addinfo[,2], cex=1.5)
 
 require(rgl)
 Rtsne_res_3d <- Rtsne(data[,2:668], check_duplicates = FALSE, pca = TRUE, perplexity=5, theta=0.5, dims=3)
 plot3d(Rtsne_res_3d$Y, col=cols[data[,1]])
 text(Rtsne_res$Y, labels=rownames(data))
-
-
 
 ### PCA
 
@@ -95,13 +105,16 @@ require(ggfortify)
 autoplot(pca_result, label=TRUE, label.size=2, shape = TRUE, loadings=FALSE, col=cols[data[,1]])
 
 
-###### SOM
+### SOM
+library(kohonen)
+
+datamat<-as.matrix(data)
 
 som_grid <- somgrid(xdim = 10, ydim=10, topo="hexagonal")
 
-som_model <- som(data_train[,2:25], 
+som_model <- som(datamat[,1:667], 
                  grid=som_grid, 
-                 rlen=100, 
+                 rlen=1000, 
                  alpha=c(0.05,0.01), 
                  keep.data = TRUE,
                  normalizeDataLayers = TRUE)
@@ -111,5 +124,34 @@ plot(som_model, type="count", label=label)
 plot(som_model, type="dist.neighbours") #U-MATRIX                                     
 plot(som_model, type="codes") #same as default type
 
-label <- rownames(data_train)
+label <- rownames(data)
 plot(som_model, type="mapping", label=label)
+
+
+#########################################################################################
+#########################################################################################
+
+#Normalizing from 0 to 1
+setwd("C:/Users/cho/Desktop/Rcode") ##저장위치 지정##
+set.seed(777) 
+data<-read.csv("busan_1702_processed.csv",header=T, row.names=1)
+
+data_norm<-data[,-1] #delete GU names
+data_norm<-t(apply(data_norm, 1, function(x)(x-min(x))/(max(x)-min(x))))
+
+Rtsne_res <- Rtsne(data_norm[,1:667], check_duplicates = FALSE, pca = FALSE, perplexity=5, theta=0, dims=2, max_iter=50000)
+
+cols <- rainbow(length(unique(data[,1]))) #by 행정구
+plot(Rtsne_res$Y, t='p',col=cols[data[,1]], cex=.5, lwd=2)
+text(Rtsne_res$Y, labels=rownames(data), cex=0.5)
+addinfo<-read.csv("busan_addinfo.csv",header=T)
+text(Rtsne_res$Y, labels=addinfo[,2], cex=1.5)
+
+
+pca_result <- prcomp(data_norm[,1:667],tol=0.01)
+summary(pca_result)
+#print(pca_result)
+#plot(pca_result, type = "l")
+#from https://cran.r-project.org/web/packages/ggfortify/vignettes/plot_pca.html
+require(ggfortify)
+autoplot(pca_result, label=TRUE, label.size=2, shape = TRUE, loadings=FALSE, col=cols[data[,1]])
