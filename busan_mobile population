@@ -1,34 +1,3 @@
-## Comparision with census
-
-d1<-as.matrix(file[1:200,3])
-d2<-as.matrix(file[1:200,4])
-d3<-as.matrix(file[1:200,5])
-d4<-as.matrix(file[1:200,6])
-d5<-as.matrix(file[1:200,7])
-
-d1 <- matrix(d1, nrow = 10, byrow = TRUE)
-d2 <- matrix(d2, nrow = 10, byrow = TRUE)
-d3 <- matrix(d3, nrow = 10, byrow = TRUE)
-d4 <- matrix(d4, nrow = 10, byrow = TRUE)
-d5 <- matrix(d5, nrow = 10, byrow = TRUE)
-
-heatmap(d1)
-heatmap(d2)
-heatmap(d3)
-heatmap(d4)
-heatmap(d5)
-
-library(plotly)
-plot_ly(z = d1, colorscale = "Greys", type = "heatmap")
-plot_ly(z = d2, colorscale = "Greys", type = "heatmap")
-plot_ly(z = d3, colorscale = "Greys", type = "heatmap")
-plot_ly(z = d4, colorscale = "Greys", type = "heatmap")
-plot_ly(z = d5, colorscale = "Greys", type = "heatmap")
-
-
-
-##t-SNE 207 dongs from SGIS BUSAN
-
 rm(list=ls())
 setwd("C:/Users/cho/Desktop/Rcode") ##저장위치 지정##
 library(dplyr)
@@ -133,19 +102,74 @@ plot(som_model, type="mapping", label=label)
 
 #Normalizing from 0 to 1
 setwd("C:/Users/cho/Desktop/Rcode") ##저장위치 지정##
+library(Rtsne)
 set.seed(777) 
 data<-read.csv("busan_1702_processed.csv",header=T, row.names=1)
 
 data_norm<-data[,-1] #delete GU names
-data_norm<-t(apply(data_norm, 1, function(x)(x-min(x))/(max(x)-min(x))))
+data_norm<-t(apply(data_norm, 1, function(x)(x-min(x))/(max(x)-min(x)))) #Min-Max Normalization
 
 Rtsne_res <- Rtsne(data_norm[,1:667], check_duplicates = FALSE, pca = FALSE, perplexity=5, theta=0, dims=2, max_iter=50000)
 
 cols <- rainbow(length(unique(data[,1]))) #by 행정구
+addinfo<-read.csv("busan_addinfo.csv",header=T)
 plot(Rtsne_res$Y, t='p',col=cols[data[,1]], cex=.5, lwd=2)
 text(Rtsne_res$Y, labels=rownames(data), cex=0.5)
-addinfo<-read.csv("busan_addinfo.csv",header=T)
 text(Rtsne_res$Y, labels=addinfo[,2], cex=1.5)
+
+
+
+### FIND NUMBER OF CLUSTERS #
+library(clValid)
+internal <- clValid(Rtsne_res$Y, 2:20, clMethods=c("hierarchical","kmeans","pam"),validation="internal")
+summary(internal)
+plot(internal,measure="Silhouette",legendLoc="bottomright")
+
+
+### ASSIGN CLUSTERS 
+#from https://blog.datascienceheroes.com/playing-with-dimensions-from-clustering-pca-t-sne-to-carl-sagan/
+
+library(ggplot2)
+library(gridExtra) 
+
+fit_kmeans=kmeans(scale(Rtsne_res$Y), 9)   ### NUBMER OF CLUSTERS
+fit_hi=hclust(dist(scale(Rtsne_res$Y)))
+
+data4cluster<-as.data.frame(Rtsne_res$Y)
+data4cluster$cl_kmeans=factor(fit_kmeans$cluster)
+data4cluster$cl_hi=factor(cutree(fit_hi, k=9))    ### NUMBER OF CLUSTERS
+                          
+plot_cluster=function(data, var_cluster, palette)  
+{
+  ggplot(data, aes_string(x="V1", y="V2", color=var_cluster)) +
+    geom_point(size=1) +
+    guides(colour=guide_legend(override.aes=list(size=6))) +
+    xlab("") + ylab("") +
+    ggtitle("") +
+    theme_light(base_size=20) +
+    theme(axis.text.x=element_blank(),
+          axis.text.y=element_blank(),
+          legend.direction = "horizontal", 
+          legend.position = "bottom",
+          legend.box = "horizontal") + 
+    scale_colour_brewer(palette = palette) 
+}
+
+plot_k=plot_cluster(data4cluster,"cl_kmeans","Paired")
+plot_h=plot_cluster(data4cluster,"cl_hi","Paired")
+
+plot_h
+
+#grid.arrange(plot_k, plot_h,  ncol=2) 
+
+
+
+###########################################################
+#Comapre actual values
+min_max_pop <-as.data.frame(rownames(data))
+min_max_pop$max <- apply(data[,-1],1,max)
+min_max_pop$min <- apply(data[,-1],1,min)
+
 
 
 pca_result <- prcomp(data_norm[,1:667],tol=0.01)
@@ -155,3 +179,48 @@ summary(pca_result)
 #from https://cran.r-project.org/web/packages/ggfortify/vignettes/plot_pca.html
 require(ggfortify)
 autoplot(pca_result, label=TRUE, label.size=2, shape = TRUE, loadings=FALSE, col=cols[data[,1]])
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+## Comparision with census
+
+d1<-as.matrix(file[1:200,3])
+d2<-as.matrix(file[1:200,4])
+d3<-as.matrix(file[1:200,5])
+d4<-as.matrix(file[1:200,6])
+d5<-as.matrix(file[1:200,7])
+
+d1 <- matrix(d1, nrow = 10, byrow = TRUE)
+d2 <- matrix(d2, nrow = 10, byrow = TRUE)
+d3 <- matrix(d3, nrow = 10, byrow = TRUE)
+d4 <- matrix(d4, nrow = 10, byrow = TRUE)
+d5 <- matrix(d5, nrow = 10, byrow = TRUE)
+
+heatmap(d1)
+heatmap(d2)
+heatmap(d3)
+heatmap(d4)
+heatmap(d5)
+
+library(plotly)
+plot_ly(z = d1, colorscale = "Greys", type = "heatmap")
+plot_ly(z = d2, colorscale = "Greys", type = "heatmap")
+plot_ly(z = d3, colorscale = "Greys", type = "heatmap")
+plot_ly(z = d4, colorscale = "Greys", type = "heatmap")
+plot_ly(z = d5, colorscale = "Greys", type = "heatmap")
