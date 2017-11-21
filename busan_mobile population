@@ -100,23 +100,44 @@ plot(som_model, type="mapping", label=label)
 #########################################################################################
 #########################################################################################
 
-#Normalizing from 0 to 1
+### Normalizing from 0 to 1
 setwd("C:/Users/cho/Desktop/Rcode") ##저장위치 지정##
-library(Rtsne)
+library(scales)
 set.seed(777) 
-data<-read.csv("busan_1702_processed.csv",header=T, row.names=1)
 
+data<-read.csv("busan_1702_processed.csv",header=T, row.names=1)
 data_norm<-data[,-1] #delete GU names
 data_norm<-t(apply(data_norm, 1, function(x)(x-min(x))/(max(x)-min(x)))) #Min-Max Normalization
+#write.csv(data_norm,"norm1.csv")
 
+
+### Actual value scale
+min_max_pop <-as.data.frame(matrix(nrow=nrow(data)))
+rownames(min_max_pop) <-rownames(data)
+min_max_pop$max <- apply(data[,-1],1,max)
+min_max_pop$min <- apply(data[,-1],1,min)
+min_max_pop$avg <- apply(data[,-1],1,mean)
+#min_max_pop[,1] <-  data4cluster$cl_hi
+min_max_pop[,2] <- round(rescale(min_max_pop[,2], to = c(0, 1)),digits=1)
+min_max_pop[,3] <- round(rescale(min_max_pop[,3], to = c(0, 1)),digits=1)
+min_max_pop[,4] <- round(rescale(min_max_pop[,4], to = c(0, 1)),digits=1)
+min_max_pop[,4] <- round(scale(min_max_pop[,4]),digits=1)
+#write.csv(min_max_pop, "actual_scale.csv")
+
+
+### t-SNE
+library(Rtsne)
 Rtsne_res <- Rtsne(data_norm[,1:667], check_duplicates = FALSE, pca = FALSE, perplexity=5, theta=0, dims=2, max_iter=50000)
 
 cols <- rainbow(length(unique(data[,1]))) #by 행정구
+#cols <- rainbow(length(unique(min_max_pop[,4]))) ## AVG POPULATION
+
 addinfo<-read.csv("busan_addinfo.csv",header=T)
 plot(Rtsne_res$Y, t='p',col=cols[data[,1]], cex=.5, lwd=2)
+
+legend("bottomright",legend=unique(data[,1]),col=cols,cex=0.6,lwd=2, horiz=FALSE, bty="o")
 text(Rtsne_res$Y, labels=rownames(data), cex=0.5)
 text(Rtsne_res$Y, labels=addinfo[,2], cex=1.5)
-
 
 
 ### FIND NUMBER OF CLUSTERS #
@@ -128,18 +149,41 @@ plot(internal,measure="Silhouette",legendLoc="bottomright")
 
 ### ASSIGN CLUSTERS 
 #from https://blog.datascienceheroes.com/playing-with-dimensions-from-clustering-pca-t-sne-to-carl-sagan/
-
 library(ggplot2)
 library(gridExtra) 
 
-fit_kmeans=kmeans(scale(Rtsne_res$Y), 9)   ### NUBMER OF CLUSTERS
+fit_kmeans=kmeans(scale(Rtsne_res$Y), 14)   ### NUBMER OF CLUSTERS
 fit_hi=hclust(dist(scale(Rtsne_res$Y)))
 
 data4cluster<-as.data.frame(Rtsne_res$Y)
 data4cluster$cl_kmeans=factor(fit_kmeans$cluster)
-data4cluster$cl_hi=factor(cutree(fit_hi, k=9))    ### NUMBER OF CLUSTERS
+data4cluster$cl_hi=factor(cutree(fit_hi, k=13))    ### NUMBER OF CLUSTERS
                           
-plot_cluster=function(data, var_cluster, palette)  
+# plot_cluster=function(data, var_cluster, palette)  
+# {
+#   ggplot(data, aes_string(x="V1", y="V2", color=var_cluster)) +
+#     geom_point(size=1) +
+#     guides(colour=guide_legend(override.aes=list(size=6))) +
+#     xlab("") + ylab("") +
+#     ggtitle("") +
+#     theme_light(base_size=20) +
+#     theme(axis.text.x=element_blank(),
+#           axis.text.y=element_blank(),
+#           legend.direction = "horizontal", 
+#           legend.position = "bottom",
+#           legend.box = "horizontal") + 
+#     scale_colour_brewer(palette = palette) 
+# }
+# plot_k=plot_cluster(data4cluster,"cl_kmeans","Paired")
+# plot_h=plot_cluster(data4cluster,"cl_hi","Paired")
+# plot_h
+# plot_k
+#grid.arrange(plot_k, plot_h,  ncol=2) 
+
+
+####### MORE THAN 12 COLORS #######
+
+plot_cluster=function(data, var_cluster)  
 {
   ggplot(data, aes_string(x="V1", y="V2", color=var_cluster)) +
     geom_point(size=1) +
@@ -152,25 +196,16 @@ plot_cluster=function(data, var_cluster, palette)
           legend.direction = "horizontal", 
           legend.position = "bottom",
           legend.box = "horizontal") + 
-    scale_colour_brewer(palette = palette) 
+    scale_fill_manual(values = getPalette(colourCount))
 }
 
-plot_k=plot_cluster(data4cluster,"cl_kmeans","Paired")
-plot_h=plot_cluster(data4cluster,"cl_hi","Paired")
+plot_k=plot_cluster(data4cluster,"cl_kmeans")
+plot_h=plot_cluster(data4cluster,"cl_hi")
 
-plot_h
-
-#grid.arrange(plot_k, plot_h,  ncol=2) 
+grid.arrange(plot_k, plot_h,  ncol=2) 
 
 
-
-###########################################################
-#Comapre actual values
-min_max_pop <-as.data.frame(rownames(data))
-min_max_pop$max <- apply(data[,-1],1,max)
-min_max_pop$min <- apply(data[,-1],1,min)
-
-
+### PCA 
 
 pca_result <- prcomp(data_norm[,1:667],tol=0.01)
 summary(pca_result)
@@ -179,6 +214,8 @@ summary(pca_result)
 #from https://cran.r-project.org/web/packages/ggfortify/vignettes/plot_pca.html
 require(ggfortify)
 autoplot(pca_result, label=TRUE, label.size=2, shape = TRUE, loadings=FALSE, col=cols[data[,1]])
+
+
 
 
 
