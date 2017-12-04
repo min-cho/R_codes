@@ -1,0 +1,66 @@
+# Analyze rather than graphical figure. 171201
+
+rm(list=ls())
+setwd("C:/Users/cho/Desktop/Rcode") ##저장위치 지정##
+#set.seed(777) 
+
+file<-read.csv("1702_gu_timeavg.csv",header=F)
+data<-file[,-1]
+rownames(data)<-file[,1]
+
+data_norm<-data
+data_norm<-t(apply(data, 1, function(x)(x-min(x))/(max(x)-min(x)))) #Min-Max Normalization
+
+
+eng_name<-c("Gangseo","Geumjeong","Gijang","Nam","Dong","Dongnae","Busanjin","Buk","Sasang","Saha","Seo","Suyeong","Yeonje","Yeongdo","jung","Haeundae")
+
+
+library(Rtsne)
+Rtsne_res <- Rtsne(data_norm[,1:69], check_duplicates = FALSE, pca = FALSE, perplexity=5, theta=0, dims=2, max_iter=50000)
+cols <- rainbow(length((file[,1]))) #by 행정구
+plot(Rtsne_res$Y, t='p',col=cols, cex=.5, lwd=2)
+text(Rtsne_res$Y, labels=eng_name, cex=0.8)
+
+
+###
+
+### FIND NUMBER OF CLUSTERS #
+#library(clValid)
+#internal <- clValid(Rtsne_res$Y, 2:8, clMethods=c("hierarchical","kmeans","pam"),validation="internal")
+#summary(internal)
+#plot(internal,measure="Silhouette",legendLoc="bottomright")
+
+
+### ASSIGN CLUSTERS 
+#from https://blog.datascienceheroes.com/playing-with-dimensions-from-clustering-pca-t-sne-to-carl-sagan/
+library(ggplot2)
+library(gridExtra) 
+
+fit_kmeans=kmeans(scale(Rtsne_res$Y), 4)   ### NUBMER OF CLUSTERS
+fit_hi=hclust(dist(scale(Rtsne_res$Y)))
+
+data4cluster<-as.data.frame(Rtsne_res$Y)
+data4cluster$cl_kmeans=factor(fit_kmeans$cluster)
+data4cluster$cl_hi=factor(cutree(fit_hi, k=4))    ### NUMBER OF CLUSTERS
+
+ plot_cluster=function(data, var_cluster, palette)  
+ {
+   ggplot(data, aes_string(x="V1", y="V2", color=var_cluster, shape=var_cluster)) +
+     geom_point(size=2) +
+     guides(colour=guide_legend(override.aes=list(size=6))) +
+     xlab("") + ylab("") +
+     ggtitle("") +
+     theme_light(base_size=20) +
+     theme(axis.text.x=element_blank(),
+           axis.text.y=element_blank(),
+           legend.direction = "horizontal", 
+           legend.position = "bottom",
+           legend.box = "horizontal") + 
+     scale_colour_brewer(palette = palette) 
+ }
+ 
+ plot_k=plot_cluster(data4cluster,"cl_kmeans","Set1")
+ plot_h=plot_cluster(data4cluster,"cl_hi","Set1")
+ plot_h
+ plot_k
+grid.arrange(plot_k, plot_h,  ncol=2) 
