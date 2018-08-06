@@ -1,0 +1,28 @@
+rm(list=ls())
+set.seed(777)
+
+setwd("C:/Users/cho/Desktop/Rcode/marinetraffic") ##저장위치 지정##
+
+file<-read.csv("YUTAKA.csv",header=T)
+file<-file[,2:3]
+file<-file[complete.cases(file),]
+
+library(dbscan)
+
+data<-file
+
+db = dbscan(data, eps=0.1)
+hullplot(data, db$cluster)
+
+for(i in 1:(length(data[,1]))){
+  if(db$cluster[i]==0){
+    data[i,]<-c(NA,NA)
+  }}
+
+result<-data[complete.cases(data),]
+
+#plot(file) 
+#plot(result) #after remove
+
+
+write.csv(result,"147.csv")
