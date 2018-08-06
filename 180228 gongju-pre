@@ -1,0 +1,33 @@
+rm(list=ls())
+setwd("C:/Users/cho/Desktop/Rcode") ##저장위치 지정##
+
+file<-read.csv("gongju_180228.csv",header=T)
+rownames(file)<-file[,1]
+file<-file[,-1]
+
+#CHECK PARAMETERS
+seqlen<-7 
+num_var<-9
+day<-length(file[,1])
+
+raw_file<-file
+
+file<-apply(t(file), 1, function(x)(x-min(x,na.rm=TRUE))/(max(x,na.rm=TRUE)-min(x,na.rm=TRUE))) #Min-Max Normalization
+
+data_1 <- data.frame((matrix(nrow=day,ncol=seqlen*num_var+1)))
+
+
+for(i in 1:(day-seqlen)){
+  for(j in 1:seqlen){
+    
+  data_1[i,((j-1)*9+1):(j*9)] <- file[i+j-1,]
+  data_1[i,64] <- file[i+j,9]
+
+}}
+
+
+#remove NaN Values
+data_1<-data_1[complete.cases(data_1),]
+
+
+#write.csv(data_1,"data_1.csv")
