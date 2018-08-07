@@ -1,0 +1,71 @@
+rm(list=ls())
+set.seed(777)
+
+setwd("C:/Users/cho/Desktop/Rcode") ##저장위치 지정##
+
+file<-read.csv("count.csv",header=T)
+
+data<-file[,c(3,4,2,5)]
+colnames(data)<-c("long","lat","count","vul")
+
+library(ggplot2)
+#geom_raster is a high performance special case for when all the tiles are the same size.
+
+
+route<-ggplot(data,aes(x=long,y=lat)) + 
+  theme_bw() +
+  geom_raster(aes(fill=count), interpolate = FALSE) +
+  scale_fill_gradient(low = "green", high = "red",limits=c(23,max(data[,3])))
+
+
+vulmap<-ggplot(data,aes(x=long,y=lat)) + 
+  theme_bw() +
+  geom_raster(aes(fill=vul), interpolate = FALSE)
+
+
+# long & lat 0.01 = 1KM , 0.1=10KM
+
+resource=as.data.frame(cbind(data$long,data$lat,data$vul))
+row_sub = apply(resource, 1, function(row) all(row !=0 ))
+resource<-resource[row_sub,]
+resource<-resource[,c(1,2)]
+
+rmat<-resource
+pointmat<-as.data.frame(cbind(data$long,data$lat))
+distmat<-as.data.frame(cbind(data$long,data$lat))
+distmat[,3]<-NA
+colnames(distmat)<-c("long","lat","distance")
+
+len=length(data[,1])
+for(i in 1:(len)){
+  temp<-rbind(pointmat[i,],rmat)
+  dm<-as.matrix(dist(temp,method="euclidean")) #temporary distance computation matrix
+  distmat[i,3]<-min(dm[1,2:134])
+  }
+
+distmap<-ggplot(distmat,aes(x=long,y=lat)) + 
+  theme_bw() +
+  geom_raster(aes(fill=distance), interpolate = FALSE) +
+  scale_fill_gradient(low = "red", high = "white",limits=c(0,0.1))
+
+
+result<-as.data.frame(cbind(data[,1:3],distmat[,3]))
+colnames(result)<-c("long","lat","count","distance")
+
+# VALID VALUE : distance= 0~0.1, count= 22~127 
+
+result$count<-result$count-22
+result$count<-pmax(result$count,0)
+result$count<-(result$count/max(result$count))*10
+
+result$distance<-0.1-result$distance
+result$distance<-pmax(result$distance,0)*100
+
+result$risk<-result$count+result$distance  ### SUM
+result$risk<-result$count*result$distance  ### PROD
+
+
+riskmap<-ggplot(result,aes(x=long,y=lat)) + 
+  theme_bw() +
+  geom_raster(aes(fill=risk), interpolate = FALSE) +
+  scale_fill_gradient(low = "green", high = "red",limits=c(0.00001,max(result$risk)))
