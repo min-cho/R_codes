@@ -1,0 +1,107 @@
+rm(list=ls())
+set.seed(777)
+setwd("C:/Users/cho/Desktop/Rcode") ##저장위치 지정##
+
+
+data<-read.csv("DPR_graph.csv",header=T)
+
+rownames(data)<-data[,1]
+
+data<-t(as.matrix(data[,-1]))
+
+barplot(data,
+        main="Daytime Population Ratio",
+        xlab="District",ylab="DPR",ylim=c(60,200), xpd=FALSE,
+        col=c("black", "grey", "white"),
+        beside=TRUE)
+
+legend(33,200,
+       box.lty=1,
+       cex=0.95,
+       c("Census","Mobile-weekday","Mobile-weekend"),
+       fill=c("black","grey","white"))
+
+
+
+#### FOR DRI GRAPH ##########################################################
+
+rm(list=ls())
+setwd("C:/Users/cho/Desktop/Rcode") ##저장위치 지정##
+file<-read.csv("DRI_graph.csv",header=F)
+
+data<-file[,2:25]
+data<-data[complete.cases(data),]
+
+district<-(file[,1])
+name<-as.data.frame(district[c(seq(from = 1, to = 55, by = 6))])
+
+library(ggplot2)
+library(tidyr)
+
+# 구별로 자르기 ##
+data_1<-data[1:5,2:24]
+data_2<-data[6:10,2:24]
+data_3<-data[11:15,2:24]
+data_4<-data[16:20,2:24]
+data_5<-data[21:25,2:24]
+data_6<-data[25:30,2:24]
+data_7<-data[31:35,2:24]
+data_8<-data[36:40,2:24]
+data_9<-data[41:45,2:24]
+data_10<-data[46:50,2:24]
+##
+
+data_t<-t(data_10) ## SELECT & RENAME
+
+data_t<-as.data.frame(cbind(c(1:23),data_t))
+colnames(data_t)<-c("hour","Sun","Sat","Weekdays","Resident","Daytime")
+ggdata<-gather(data_t,day,DRI,2:6)
+
+
+## RENAME
+g10<-ggplot(ggdata,aes(x=hour,y=DRI,group=factor(day),col=day))+
+  theme_bw()+
+  geom_line(aes(linetype=day),size=1)+
+  geom_point(aes(shape=day),size=2)+
+  scale_color_manual(values = c("darkgrey", "black", "blue", "red", "green"))+
+  scale_linetype_manual(values=c("solid", "dashed","solid","solid","solid"))+
+  scale_shape_manual(values=c(19,8,17,15,18))+
+  xlab("Time(hour)")+ ylab("DRI")+
+  theme(legend.position="bottom",legend.direction="horizontal",legend.title=element_blank(),
+        legend.background = element_rect(linetype = 2, size = 0.5, colour = 1))+
+  
+  ##RENAME
+  ggtitle("(j) Gijiang")+ theme(plot.title = element_text(hjust = 0))
+
+#ggsave("legend_none.jpg", dpi = 500) 
+
+
+
+### multiple figure
+
+
+
+
+###############
+#extract legend
+#https://github.com/hadley/ggplot2/wiki/Share-a-legend-between-two-ggplot2-graphs
+
+library(gridExtra)
+library(grid)
+
+g_legend<-function(a.gplot){
+  tmp <- ggplot_gtable(ggplot_build(a.gplot))
+  leg <- which(sapply(tmp$grobs, function(x) x$name) == "guide-box")
+  legend <- tmp$grobs[[leg]]
+  return(legend)}
+
+mylegend<-g_legend(g1)
+
+p3 <- grid.arrange(arrangeGrob(g1 + theme(legend.position="none"),g2 + theme(legend.position="none"),
+                               g3 + theme(legend.position="none"),g4 + theme(legend.position="none"),
+                               g5 + theme(legend.position="none"),g6 + theme(legend.position="none"),
+                               g7 + theme(legend.position="none"),g8 + theme(legend.position="none"),
+                               g9 + theme(legend.position="none"),g10 + theme(legend.position="none"),
+                               nrow=5),
+                   mylegend, nrow=2,heights=c(10, 1), 
+                   top= textGrob("Demographic Resilinece Index in Time",gp=gpar(fontsize=15,font=2)))
