@@ -56,16 +56,35 @@ colnames(result)<-c("long","lat","count","distance")
 
 result$count<-result$count-22
 result$count<-pmax(result$count,0)
-result$count<-(result$count/max(result$count))*10
+result$count<-(result$count/max(result$count))*100
 
 result$distance<-0.1-result$distance
-result$distance<-pmax(result$distance,0)*100
-
-result$risk<-result$count+result$distance  ### SUM
-result$risk<-result$count*result$distance  ### PROD
+result$distance<-pmax(result$distance,0)*1000
 
 
-riskmap<-ggplot(result,aes(x=long,y=lat)) + 
+
+result$risksum<-result$count+result$distance  ### SUM
+
+risksummap<-ggplot(result,aes(x=long,y=lat)) + 
   theme_bw() +
-  geom_raster(aes(fill=risk), interpolate = FALSE) +
-  scale_fill_gradient(low = "green", high = "red",limits=c(0.00001,max(result$risk)))
+  geom_raster(aes(fill=risksum), interpolate = FALSE) +
+  scale_fill_gradient(low = "green", high = "red",limits=c(0.0000001,max(result$risksum)))
+
+result$count<-pmax(result$count,1)
+result$distance<-pmax(result$distance,1)
+result$riskprod<-sqrt(result$count*result$distance)  ### PROD
+
+riskprodmap<-ggplot(result,aes(x=long,y=lat)) + 
+  theme_bw() +
++   theme_bw() +
++   geom_raster(aes(fill=riskprod), interpolate = FALSE) +
++   scale_fill_gradient(low = "green", high = "red",limits=c(1.0000001,max(result$riskprod)))
+ 
+export<-cbind(file[,1],result)
+geom_raster(aes(fill=riskprod), interpolate = FALSE) +
+  scale_fill_gradient(low = "green", high = "red",limits=c(1.0000001,max(result$riskprod)))
+
+export<-cbind(file[,1],result)
+#write.csv(export,"resultmap.csv")
+
+g1<-
