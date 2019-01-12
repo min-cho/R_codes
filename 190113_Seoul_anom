@@ -1,0 +1,96 @@
+rm(list=ls())
+setwd("C:/Users/cho/Desktop/Rcode/pop_rawdata") ##저장위치 지정##
+set.seed(777) 
+
+#### DATA PRE-PROCESS ####
+
+#from seoul_dong-scale_; from 1803 to 1812
+
+file<-read.csv("201803.csv",header=T)
+data<-subset(file, 행정동코드>=11440660 & 행정동코드<11440661)
+rownames(data)<-seq(from=3001, length=nrow(data))
+month_3 <-as.data.frame(cbind(data$기준일ID, data$총생활인구수))
+
+file<-read.csv("201804.csv",header=T)
+data<-subset(file, 행정동코드>=11440660 & 행정동코드<11440661)
+rownames(data)<-seq(from=4001, length=nrow(data))
+month_4 <-as.data.frame(cbind(data$기준일ID, data$총생활인구수))
+
+file<-read.csv("201805.csv",header=T)
+data<-subset(file, 행정동코드>=11440660 & 행정동코드<11440661)
+rownames(data)<-seq(from=5001, length=nrow(data))
+month_5 <-as.data.frame(cbind(data$기준일ID, data$총생활인구수))
+
+file<-read.csv("201806.csv",header=T)
+data<-subset(file, 행정동코드>=11440660 & 행정동코드<11440661)
+rownames(data)<-seq(from=6001, length=nrow(data))
+month_6 <-as.data.frame(cbind(data$기준일ID, data$총생활인구수))
+
+file<-read.csv("201807.csv",header=T)
+data<-subset(file, 행정동코드>=11440660 & 행정동코드<11440661)
+rownames(data)<-seq(from=7001, length=nrow(data))
+month_7 <-as.data.frame(cbind(data$기준일ID, data$총생활인구수))
+
+file<-read.csv("201808.csv",header=T)
+data<-subset(file, 행정동코드>=11440660 & 행정동코드<11440661)
+rownames(data)<-seq(from=8001, length=nrow(data))
+month_8 <-as.data.frame(cbind(data$기준일ID, data$총생활인구수))
+
+file<-read.csv("201809.csv",header=T)
+data<-subset(file, 행정동코드>=11440660 & 행정동코드<11440661)
+rownames(data)<-seq(from=9001, length=nrow(data))
+month_9 <-as.data.frame(cbind(data$기준일ID, data$총생활인구수))
+
+file<-read.csv("201810.csv",header=T)
+data<-subset(file, 행정동코드>=11440660 & 행정동코드<11440661)
+rownames(data)<-seq(from=10001, length=nrow(data))
+month_10 <-as.data.frame(cbind(data$기준일ID, data$총생활인구수))
+
+file<-read.csv("201811.csv",header=T)
+data<-subset(file, 행정동코드>=11440660 & 행정동코드<11440661)
+rownames(data)<-seq(from=11001, length=nrow(data))
+month_11 <-as.data.frame(cbind(data$기준일ID, data$총생활인구수))
+
+file<-read.csv("201812.csv",header=T)
+data<-subset(file, 행정동코드>=11440660 & 행정동코드<11440661)
+rownames(data)<-seq(from=12001, length=nrow(data))
+month_12 <-as.data.frame(cbind(data$기준일ID, data$총생활인구수))
+
+file<-read.csv("201801.csv",header=T)
+date=file[1]
+file<-file[-1]
+colnames(file)<-c(0:23)
+days=nrow(file)
+data<-as.data.frame(matrix(nrow=days*24,ncol=2))
+for(i in 1:(days)){
+  first<-(24*(i-1))+1
+  last<-24*i
+  data[first:last,1]<-date[i,1]
+  data[first:last,2]<-t(file[i,1:24])}
+month_1 <-data
+
+file<-read.csv("201802.csv",header=T)
+date=file[1]
+file<-file[-1]
+colnames(file)<-c(0:23)
+days=nrow(file)
+data<-as.data.frame(matrix(nrow=days*24,ncol=2))
+for(i in 1:(days)){
+  first<-(24*(i-1))+1
+  last<-24*i
+  data[first:last,1]<-date[i,1]
+  data[first:last,2]<-t(file[i,1:24])}
+month_2 <-data
+
+allmonth<-rbind(month_1,month_2,month_3,month_4,month_5,month_6,month_7,month_8,month_9,month_10,month_11,month_12)
+
+#remove holidays
+allmonth<-subset(allmonth, V1!=20180215 & V1!=20180216 & V1!=20180217 
+                 & V1!=20180923 & V1!=20180924 & V1!=20180925 & V1!=20180926)
+
+library(AnomalyDetection)
+res = AnomalyDetectionVec(allmonth$V2, max_anoms=0.01, alpha=0.05, direction='neg', plot=TRUE, period=24, longterm_period=24*30)
+res$plot
+anomtable=res$anom
+for (i in 1:(nrow(anomtable))){
+  anomtable$index[i]<-allmonth[(anomtable$index[i]),1]}
