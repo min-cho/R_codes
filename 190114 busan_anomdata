@@ -1,0 +1,187 @@
+###############################################################################################
+## TWITTER anomaly detection Algorithm ##
+
+rm(list=ls())
+setwd("C:/Users/cho/Desktop/Rcode/pop_busan") ##저장위치 지정##
+set.seed(777) 
+
+allmonth<-file<-read.csv("busan_2018_allmonth.csv",header=T)
+
+#remove holidays
+#allmonth<-subset(allmonth, V1!=180215 & V1!=180216 & V1!=180217 
+#                 & V1!=180923 & V1!=180924 & V1!=180925 & V1!=180926)
+
+library(AnomalyDetection)
+res = AnomalyDetectionVec(allmonth$V3, max_anoms=0.01, alpha=0.05, direction='neg', title='busan-2018',
+                          plot=TRUE, period=24*7, longterm_period=24*7*4)
+res$plot
+anomtable=res$anom
+for (i in 1:(nrow(anomtable))){
+  anomtable$timestamp[i]<-allmonth[(anomtable$index[i]),2]
+  anomtable$index[i]<-allmonth[(anomtable$index[i]),1]}
+
+
+#write.csv(anomtable, file="busan_anomtable", row.names=FALSE)
+
+###############################################################################################
+#### DATA PRE-PROCESS ####
+#from Busan_Jung-Gu; from 1801 to 1811
+
+
+#rm(list=ls())
+setwd("C:/Users/cho/Desktop/Rcode/pop_busan") ##저장위치 지정##
+set.seed(777) 
+
+file<-read.csv("201801.csv",header=T)
+file<-subset(file, 동별=="계")[-2]
+date<-seq(from=180101, length=nrow(file))
+days=nrow(file)
+data<-as.data.frame(matrix(nrow=days*24,ncol=3))
+for(i in 1:(days)){
+  first<-(24*(i-1))+1
+  last<-24*i
+  data[first:last,1]<-date[i]
+  data[first:last,2]<-c(1:24)
+  data[first:last,3]<-t(file[i,2:25])}
+month_1 <-data
+
+file<-read.csv("201802.csv",header=T)
+file<-subset(file, 동별=="계")[-2]
+date<-seq(from=180201, length=nrow(file))
+days=nrow(file)
+data<-as.data.frame(matrix(nrow=days*24,ncol=3))
+for(i in 1:(days)){
+  first<-(24*(i-1))+1
+  last<-24*i
+  data[first:last,1]<-date[i]
+  data[first:last,2]<-c(1:24)
+  data[first:last,3]<-t(file[i,2:25])}
+month_2 <-data
+
+file<-read.csv("201803.csv",header=T)
+file<-subset(file, 동별=="계")[-2]
+date<-seq(from=180301, length=nrow(file))
+days=nrow(file)
+data<-as.data.frame(matrix(nrow=days*24,ncol=3))
+for(i in 1:(days)){
+  first<-(24*(i-1))+1
+  last<-24*i
+  data[first:last,1]<-date[i]
+  data[first:last,2]<-c(1:24)
+  data[first:last,3]<-t(file[i,2:25])}
+month_3 <-data
+
+file<-read.csv("201804.csv",header=T)
+file<-subset(file, 동별=="계")[-2]
+date<-seq(from=180401, length=nrow(file))
+days=nrow(file)
+data<-as.data.frame(matrix(nrow=days*24,ncol=3))
+for(i in 1:(days)){
+  first<-(24*(i-1))+1
+  last<-24*i
+  data[first:last,1]<-date[i]
+  data[first:last,2]<-c(1:24)
+  data[first:last,3]<-t(file[i,2:25])}
+month_4 <-data
+
+file<-read.csv("201805.csv",header=T)
+file<-subset(file, 동별=="계")[-2]
+date<-seq(from=180501, length=nrow(file))
+days=nrow(file)
+data<-as.data.frame(matrix(nrow=days*24,ncol=3))
+for(i in 1:(days)){
+  first<-(24*(i-1))+1
+  last<-24*i
+  data[first:last,1]<-date[i]
+  data[first:last,2]<-c(1:24)
+  data[first:last,3]<-t(file[i,2:25])}
+month_5 <-data
+
+file<-read.csv("201806.csv",header=T)
+file<-subset(file, 동별=="계")[-2]
+date<-seq(from=180601, length=nrow(file))
+days=nrow(file)
+data<-as.data.frame(matrix(nrow=days*24,ncol=3))
+for(i in 1:(days)){
+  first<-(24*(i-1))+1
+  last<-24*i
+  data[first:last,1]<-date[i]
+  data[first:last,2]<-c(1:24)
+  data[first:last,3]<-t(file[i,2:25])}
+month_6 <-data
+
+file<-read.csv("201807.csv",header=T)
+file<-subset(file, 동별=="계")[-2]
+date<-seq(from=180701, length=nrow(file))
+days=nrow(file)
+data<-as.data.frame(matrix(nrow=days*24,ncol=3))
+for(i in 1:(days)){
+  first<-(24*(i-1))+1
+  last<-24*i
+  data[first:last,1]<-date[i]
+  data[first:last,2]<-c(1:24)
+  data[first:last,3]<-t(file[i,2:25])}
+month_7 <-data
+
+
+file<-read.csv("201808.csv",header=T)
+file<-subset(file, 동별=="계")[-2]
+date<-seq(from=180801, length=nrow(file))
+days=nrow(file)
+data<-as.data.frame(matrix(nrow=days*24,ncol=3))
+for(i in 1:(days)){
+  first<-(24*(i-1))+1
+  last<-24*i
+  data[first:last,1]<-date[i]
+  data[first:last,2]<-c(1:24)
+  data[first:last,3]<-t(file[i,2:25])}
+month_8 <-data
+
+
+file<-read.csv("201809.csv",header=T)
+file<-subset(file, 동별=="계")[-2]
+date<-seq(from=180901, length=nrow(file))
+days=nrow(file)
+data<-as.data.frame(matrix(nrow=days*24,ncol=3))
+for(i in 1:(days)){
+  first<-(24*(i-1))+1
+  last<-24*i
+  data[first:last,1]<-date[i]
+  data[first:last,2]<-c(1:24)
+  data[first:last,3]<-t(file[i,2:25])}
+month_9 <-data
+
+
+file<-read.csv("201810.csv",header=T)
+file<-subset(file, 동별=="계")[-2]
+date<-seq(from=181001, length=nrow(file))
+days=nrow(file)
+data<-as.data.frame(matrix(nrow=days*24,ncol=3))
+for(i in 1:(days)){
+  first<-(24*(i-1))+1
+  last<-24*i
+  data[first:last,1]<-date[i]
+  data[first:last,2]<-c(1:24)
+  data[first:last,3]<-t(file[i,2:25])}
+month_10 <-data
+
+
+file<-read.csv("201811.csv",header=T)
+file<-subset(file, 동별=="계")[-2]
+date<-seq(from=181101, length=nrow(file))
+days=nrow(file)
+data<-as.data.frame(matrix(nrow=days*24,ncol=3))
+for(i in 1:(days)){
+  first<-(24*(i-1))+1
+  last<-24*i
+  data[first:last,1]<-date[i]
+  data[first:last,2]<-c(1:24)
+  data[first:last,3]<-t(file[i,2:25])}
+month_11 <-data
+
+
+allmonth<-rbind(month_1,month_2,month_3,month_4,month_5,
+                month_6,month_7,month_8,month_9,month_10,month_11)
+write.csv(allmonth,file="busan_2018_allmonth.csv",row.names=FALSE)
+
+
