@@ -1,0 +1,122 @@
+#?꽌援먮룞 肄붾뱶 ?젙由? #
+
+
+rm(list=ls()) 
+set.seed(777) 
+library(AnomalyDetection)
+library(forecast)
+library(imputeTS)
+library(ggplot2)
+library(tidyr)
+
+setwd("C:/Users/cho/Desktop/Rcode/pop_seoul") ##???옣?쐞移? 吏?젙##
+seoul<-read.csv("seoul_2018_seogyo_0825.csv",header=T)
+
+seoul$V3<-seoul$V2
+days=length(seoul$V2)/24
+seoul$V2<-rep(c(1:24),times=days)
+seoul <- subset(seoul,seoul$V1>20180428 &  seoul$V1<20180902)
+allmonth<-seoul
+
+##### period: Daily
+newdata <- ts(allmonth$V3, frequency = 24) #frequency is periodicity of seasonal component in STL
+#Figure will saved in 1000,500 size
+seasonplot(newdata, main=NULL, ylab="Mobile Population")
+#### period: Daily + Weekly
+newdata <- msts(allmonth$V3, seasonal.periods = c(24,24*7)) #frequency is periodicity of seasonal component in STL
+seasonplot(newdata, main=NULL, ylab="Mobile Population")
+
+decomposed<-mstl(newdata, s.window="periodic", t.window=200, robust=FALSE)
+#plot(decomposed)
+seasonal_adj=as.data.frame(seasadj(decomposed))
+trend<-as.data.frame(decomposed[,2])
+
+
+##################################################################################
+#### Anomaly Detection _ Twitter Method
+
+res = AnomalyDetectionVec(allmonth$V3, max_anoms=0.03, alpha=0.05, direction='neg',
+                          plot=TRUE, period=24*7, longterm_period = 24*7*3)
+res$plot
+anomtable=res$anom
+for (i in 1:(nrow(anomtable))){
+  anomtable$date[i]<-allmonth[(anomtable$index[i]),1]
+  anomtable$hour[i]<-allmonth[(anomtable$index[i]),2]}
+
+
+anomtable<-subset(anomtable, date!=20180501 & date!=20180505 & date!=20180507 & date!=20180522 & date!=20180606
+                  & date!=20180613 & date!=20180815)
+anomdate<-unique(anomtable$date)
+
+#caution ! this is only for clear visualization that starts from 190610 
+anomtable<-subset(anomtable, date!=20180609)
+
+#### REVISED PLOT #####
+
+colnames(anomtable)[1:2]<-c("timestamp","count")
+res$plot$layers[[3]]$data <- anomtable[,1:2]
+res[["plot"]][["layers"]][[3]][["aes_params"]][["shape"]] <-19  #marker shape
+res[["plot"]][["labels"]][["y"]] <- "Mobile Population"
+res[["plot"]][["labels"]][["x"]] <- "Weeks"
+bpoints=c(res$plot$layers[[2]][["data"]]$xintercept)
+
+for (i in 1:(nrow(anomtable))){
+  anomtable$sadj[i]<-seasonal_adj[(anomtable$timestamp[i]),1]}
+res$plot$layers[[1]]$data[,2]<-seasonal_adj[,1]
+res$plot$layers[[3]]$data[,2] <-anomtable[,5]
+
+
+####CUSTOMIZED FOR ?꽌援먮룞 #####
+#### Plot with seasonal adj graph
+
+
+res[["plot"]][["labels"]][["title"]] <- "Mobile Population of Seogyo, 2018"
+
+Anomgraph<- res$plot + theme_classic()+ theme(legend.position="none") +
+  scale_x_continuous(breaks=c(bpoints,3024),
+                     labels = c("Apr 29","May 13","May 27","Jun 10","Jun 24","Jul 8","Jul 22","Aug 5","Aug 19","Sep 1"),
+                     expand = c(0, 0))+
+  scale_y_continuous(breaks = c(60000,70000,80000,90000,100000,110000),
+                     labels = c("60K","70K","80K","90K","100K","110K"))+
+  coord_cartesian(ylim = c(60000, 110000),xlim=c(1,3090))+
+  scale_color_manual(values=c("#333333", "#FF0000"))+
+  geom_vline(xintercept=3024)
+#Anomgraph
+
+
+#### plot with weather alert (blue box)
+alert<-read.csv("disaster_alert.csv",header=T)
+Anomgraph + geom_line(aes(x=c(1:3024),y=(alert$alert)*90000),color='blue',size=1)+
+  coord_cartesian(ylim = c(60000, 110000),xlim=c(1009,3090))
+
+
+
+
+#####################################################################
+#### plot for piecewise median graph suggested by Vallis(2014)
+
+longterm=24*7*3
+npiece=nrow(allmonth)/longterm
+piece_med = matrix(nrow=(nrow(allmonth)/longterm), ncol=1)
+piece_df = as.data.frame(matrix(nrow=(nrow(allmonth)),ncol=1))
+
+for(i in 1:(npiece)){
+  first<-(longterm*(i-1))+1
+  last<-longterm*i
+  piece_med[i]<- median(seasonal_adj[first:last,1])
+  piece_df[first:last,1]<-piece_med[i]
+}
+
+ggplot(data=seasonal_adj,aes(x=c(1:3024),y=seasonal_adj[,1])) + geom_line() +
+  theme_classic()+
+  geom_line(aes(x=c(1:3024),y=trend[,1]),color="blue",size=1.8)+
+  geom_line(aes(x=c(1:3024),y=piece_df[,1]),color="red",size=1.8)+
+  scale_x_continuous(breaks=c(bpoints,3024),
+                     labels = c("Apr 29","May 13","May 27","Jun 10","Jun 24","Jul 8","Jul 22","Aug 5","Aug 19","Sep 1"),
+                     expand = c(0, 0))+
+  coord_cartesian(ylim = c(60000, 110000),xlim=c(1009,3090))+
+  xlab("Weeks") +
+  ylab("Mobile Population")+
+  geom_vline(xintercept =1345)+geom_vline(xintercept =1681)+geom_vline(xintercept=2017)+
+  geom_vline(xintercept=2353)+geom_vline(xintercept=2689)+geom_vline(xintercept=3024)
+  
