@@ -1,0 +1,38 @@
+library(ggplot2)
+
+#### piece wise medians 
+
+ggplot(data=seasonal_adj,aes(x=c(1:3024),y=seasonal_adj[,1])) + theme_bw()+ geom_line() +
+  geom_line(aes(x=c(1:3024),y=trend[,1]),color="blue",size=1.8)+
+  geom_line(aes(x=c(1:3024),y=piece_df[,1]),color="red",size=1.8)+
+  scale_x_continuous(breaks=c(bpoints,3024),
+                     labels = c("Apr 29","May 13","May 27","Jun 10","Jun 24","Jul 8","Jul 22","Aug 5","Aug 19","Sep 1"),
+                     expand = c(0, 0))
+
+
+
+############################################################################################
+#### 湲곗긽?듅蹂? correlation
+
+setwd("C:/Users/cho/Desktop/Rcode") ##???옣?쐞移? 吏?젙##
+alert<-read.csv("disaster_alert.csv",header=T)
+
+Anomgraph + geom_line(aes(x=c(1:3024),y=(alert$alert)*90000),color='blue',size=1)+
+  coord_cartesian(ylim = c(60000, 110000),xlim=c(1345,3090))
+
+
+#scale_y_continuous(sec.axis = sec_axis((~./90000), name = "Alert"))+
+
+
+
+############################################################################################
+#### rainfall correlation 
+###蹂꾨줈?떎 ?븯吏留먯옄
+
+setwd("C:/Users/cho/Desktop/Rcode") ##???옣?쐞移? 吏?젙##
+rainfall<-read.csv("precipitation.csv",header=T)
+
+Anomgraph + scale_y_continuous(sec.axis = sec_axis((~./1300-30), name = "Precipitation(mm/hr"))+
+  geom_line(aes(x=c(1:3024),y=(rainfall$AS+30)*1300),color='blue',size=1)+
+  coord_cartesian(ylim = c(60000, 110000),xlim=c(1345,3090))
+  
